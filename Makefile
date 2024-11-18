@@ -166,6 +166,7 @@ UPROGS=\
 	$U/_usertests\
 	$U/_wc\
 	$U/_zombie\
+	$U/_hello\
 
 fs.img: fs/mkfs README $(UPROGS)
 	fs/mkfs fs.img README $(UPROGS)
