@@ -169,6 +169,7 @@ UPROGS=\
 	$U/_hello\
 	$U/_sleep\
 	$U/_pingpong\
+	$U/_find\
 
 fs.img: fs/mkfs README $(UPROGS)
 	fs/mkfs fs.img README $(UPROGS)
