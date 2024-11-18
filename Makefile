@@ -170,6 +170,7 @@ UPROGS=\
 	$U/_sleep\
 	$U/_pingpong\
 	$U/_find\
+	$U/_poweroff\
 
 fs.img: fs/mkfs README $(UPROGS)
 	fs/mkfs fs.img README $(UPROGS)
