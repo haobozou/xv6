@@ -167,6 +167,7 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 	$U/_hello\
+	$U/_sleep\
 
 fs.img: fs/mkfs README $(UPROGS)
 	fs/mkfs fs.img README $(UPROGS)
