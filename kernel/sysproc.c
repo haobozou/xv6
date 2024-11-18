@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "procinfo.h"
 
 int sys_fork(void) {
   return fork();
@@ -86,4 +87,13 @@ int sys_trace(void) {
     return -1;
   myproc()->tmask = mask;
   return 0;
+}
+
+int sys_procinfo(void) {
+  int max;
+  struct procinfo_t *p;
+
+  if (argint(0, &max) < 0 || argptr(1, (void *)&p, max * sizeof(*p)) < 0)
+    return -1;
+  return procinfo(max, p);
 }

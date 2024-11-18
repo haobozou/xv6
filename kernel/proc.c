@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "procinfo.h"
 
 struct {
   struct spinlock lock;
@@ -496,4 +497,18 @@ void procdump(void) {
     }
     cprintf("\n");
   }
+}
+
+int procinfo(int max, struct procinfo_t *procinfo) {
+  struct proc *p;
+
+  int current = 0;
+  for (p = ptable.proc; p < &ptable.proc[NPROC] && current < max; p++) {
+    if (p->state == UNUSED)
+      continue;
+    procinfo[current].pid = p->pid;
+    safestrcpy(procinfo[current].name, p->name, sizeof(procinfo[current].name));
+    current++;
+  }
+  return current;
 }
