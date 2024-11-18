@@ -80,6 +80,7 @@ static struct proc *allocproc(void) {
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->tmask = 0;
 
   release(&ptable.lock);
 
@@ -197,6 +198,8 @@ int fork(void) {
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
   pid = np->pid;
+
+  np->tmask = curproc->tmask;
 
   acquire(&ptable.lock);
 

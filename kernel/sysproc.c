@@ -78,3 +78,12 @@ int sys_halt(void) {
   outw(0x604, 0x2000);
   return 0;
 }
+
+int sys_trace(void) {
+  int mask;
+
+  if (argint(0, &mask) < 0)
+    return -1;
+  myproc()->tmask = mask;
+  return 0;
+}
