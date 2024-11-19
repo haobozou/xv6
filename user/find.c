@@ -27,7 +27,7 @@ void find(char *path, char *pattern) {
   }
 
   if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
-    printf(1, "find: path too long\n");
+    printf(2, "find: path too long\n");
     close(fd);
     return;
   }
@@ -41,7 +41,7 @@ void find(char *path, char *pattern) {
     memmove(p, de.name, DIRSIZ);
     p[DIRSIZ] = 0;
     if (stat(buf, &st) < 0) {
-      printf(1, "find: cannot stat %s\n", buf);
+      printf(2, "find: cannot stat %s\n", buf);
       continue;
     }
     switch (st.type) {
@@ -61,7 +61,7 @@ void find(char *path, char *pattern) {
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
-    printf(2, "Usage: %s dir pattern\n", argv[0]);
+    printf(2, "Usage: find <dir> <pattern>\n");
     exit();
   }
 
