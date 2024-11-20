@@ -9,7 +9,10 @@ int main(int argc, char *argv[]) {
   }
 
   int mask = atoi(argv[1]);
-  trace(mask);
+  if (trace(mask) < 0) {
+    printf(2, "Error: trace failed\n");
+    exit();
+  };
 
   int pid;
   if ((pid = fork()) == 0) {
