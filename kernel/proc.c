@@ -500,15 +500,37 @@ void procdump(void) {
 }
 
 int procinfo(int max, struct procinfo_t *procinfo) {
-  struct proc *p;
+  static char *states[] = {
+      [UNUSED] "U",
+      [EMBRYO] "E",
+      [SLEEPING] "S",
+      [RUNNABLE] "R",
+      [RUNNING] "RN",
+      [ZOMBIE] "Z",
+  };
 
+  struct proc *p;
+  int ppid[max];
+
+  acquire(&ptable.lock);
   int current = 0;
   for (p = ptable.proc; p < &ptable.proc[NPROC] && current < max; p++) {
     if (p->state == UNUSED)
       continue;
+    safestrcpy(procinfo[current].st, states[p->state], sizeof(procinfo[current].st));
     procinfo[current].pid = p->pid;
+    ppid[current] = p->parent->pid;
     safestrcpy(procinfo[current].name, p->name, sizeof(procinfo[current].name));
     current++;
   }
+  for (int i = 0; i < current; i++) {
+    for (int j = 0; j < current; j++) {
+      if (ppid[i] == procinfo[j].pid) {
+        procinfo[i].parent = &procinfo[j];
+        break;
+      }
+    }
+  }
+  release(&ptable.lock);
   return current;
 }
