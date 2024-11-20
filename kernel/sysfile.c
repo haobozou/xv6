@@ -15,6 +15,7 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "syscall.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -62,21 +63,29 @@ int sys_dup(void) {
 
 int sys_read(void) {
   struct file *f;
-  int n;
+  int fd, n;
   char *p;
 
-  if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+  if (argfd(0, &fd, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
     return -1;
+
+  if (myproc()->tmask & (1 << SYS_read))
+    cprintf("%d: syscall read(%d, %p, %d)\n", myproc()->pid, fd, p, n);
+
   return fileread(f, p, n);
 }
 
 int sys_write(void) {
   struct file *f;
-  int n;
+  int fd, n;
   char *p;
 
-  if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+  if (argfd(0, &fd, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
     return -1;
+
+  if (myproc()->tmask & (1 << SYS_write))
+    cprintf("%d: syscall write(%d, %p, %d)\n", myproc()->pid, fd, p, n);
+
   return filewrite(f, p, n);
 }
 
@@ -86,6 +95,10 @@ int sys_close(void) {
 
   if (argfd(0, &fd, &f) < 0)
     return -1;
+
+  if (myproc()->tmask & (1 << SYS_close))
+    cprintf("%d: syscall close(%d)\n", myproc()->pid, fd);
+
   myproc()->ofile[fd] = 0;
   fileclose(f);
   return 0;
@@ -269,6 +282,9 @@ int sys_open(void) {
   if (argstr(0, &path) < 0 || argint(1, &omode) < 0)
     return -1;
 
+  if (myproc()->tmask & (1 << SYS_open))
+    cprintf("%d: syscall open(\"%s\", %d)\n", myproc()->pid, path, omode);
+
   begin_op();
 
   if (omode & O_CREATE) {
@@ -384,6 +400,17 @@ int sys_exec(void) {
     if (fetchstr(uarg, &argv[i]) < 0)
       return -1;
   }
+
+  if (myproc()->tmask & (1 << SYS_exec)) {
+    cprintf("%d: syscall exec(\"%s\", [", myproc()->pid, path);
+    for (int j = 0; j < i; j++) {
+      cprintf("\"%s\"", argv[j]);
+      if (j < i - 1)
+        cprintf(", ");
+    }
+    cprintf("])\n");
+  }
+
   return exec(path, argv);
 }
 
