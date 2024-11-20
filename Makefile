@@ -173,6 +173,7 @@ UPROGS=\
 	$U/_poweroff\
 	$U/_trace\
 	$U/_ps\
+	$U/_pstree\
 
 fs.img: fs/mkfs README $(UPROGS)
 	fs/mkfs fs.img README $(UPROGS)
