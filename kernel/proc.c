@@ -305,20 +305,24 @@ int wait(void) {
 //   - swtch to start running that process
 //   - eventually that process transfers control
 //       via swtch back to the scheduler.
-void scheduler(void) {
+void rr_scheduler(void) {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
 
   for (;;) {
-    // Enable interrupts on this processor.
-    sti();
+    sti(); // Enable interrupts on this processor.
+    int norunnable = 1;
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if (p->state != RUNNABLE)
+      if (p->state != RUNNABLE) {
         continue;
+      }
+
+      norunnable = 0;
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -334,8 +338,19 @@ void scheduler(void) {
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
+
     release(&ptable.lock);
+
+    if (norunnable) {
+      hlt();
+    }
   }
+}
+
+void scheduler(void) {
+  rr_scheduler();
+
+  __builtin_unreachable();
 }
 
 // Enter scheduler.  Must hold only ptable.lock
