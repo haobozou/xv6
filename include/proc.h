@@ -39,6 +39,13 @@ enum procstate { UNUSED,
                  RUNNING,
                  ZOMBIE };
 
+struct sched_t {
+  uint ct;
+  uint rt;
+  int delay;
+  int tickets;
+};
+
 // Per-process state
 struct proc {
   uint sz; // Size of process memory (bytes)
@@ -55,6 +62,7 @@ struct proc {
   struct inode *cwd; // Current directory
   char name[16]; // Process name (debugging)
   int tmask;
+  struct sched_t sched;
 };
 
 // Process memory is laid out contiguously, low addresses first:

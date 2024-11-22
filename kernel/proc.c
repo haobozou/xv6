@@ -142,6 +142,11 @@ void userinit(void) {
 
   p->state = RUNNABLE;
 
+  p->sched.ct = ticks;
+  p->sched.rt = 0;
+  p->sched.delay = -1;
+  p->sched.tickets = MAXTICKETS;
+
   release(&ptable.lock);
 }
 
@@ -205,6 +210,11 @@ int fork(void) {
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+
+  np->sched.ct = ticks;
+  np->sched.rt = 0;
+  np->sched.delay = -1;
+  np->sched.tickets = MAXTICKETS;
 
   release(&ptable.lock);
 
@@ -347,8 +357,89 @@ void rr_scheduler(void) {
   }
 }
 
+static unsigned long randstate = 1;
+unsigned int rand() {
+  randstate = randstate * 1664525 + 1013904223;
+  return randstate;
+}
+
+void lottery_scheduler(void) {
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+
+  for (;;) {
+    sti();
+    int norunnable = 1;
+    int total = 0;
+    int found = 0;
+
+    acquire(&ptable.lock);
+
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if (p->state != RUNNABLE) {
+        continue;
+      }
+
+      norunnable = 0;
+      total += p->sched.tickets;
+      if (p->sched.delay == -1) {
+        found = 1;
+        break;
+      }
+    }
+
+    if (!norunnable) {
+      if (!found && total) {
+        int winner = rand() % total;
+        int counter = 0;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+          if (p->state != RUNNABLE) {
+            continue;
+          }
+
+          counter += p->sched.tickets;
+          if (counter > winner) {
+            found = 1;
+            break;
+          }
+        }
+      }
+
+      if (found) {
+        p->sched.rt++;
+        if (p->sched.delay == -1) {
+          p->sched.delay = ticks - p->sched.ct;
+        }
+        if (p->sched.rt % MAXTS == 0) {
+          p->sched.tickets -= PENALTY;
+          if (p->sched.tickets < MINTICKETS) {
+            p->sched.tickets = MINTICKETS;
+          }
+        }
+
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+        c->proc = 0;
+      }
+    }
+
+    release(&ptable.lock);
+
+    if (norunnable) {
+      hlt();
+    }
+  }
+}
+
 void scheduler(void) {
-  rr_scheduler();
+  // rr_scheduler();
+  lottery_scheduler();
 
   __builtin_unreachable();
 }
