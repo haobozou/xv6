@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   int i;
   int pipe[NPROC] = {0};
-  printf(1, "PID\tState\tName\n");
+  printf(1, "pid\tstate\tname\n");
   for (i = 0; i < n; i++) {
     if (info[i].pid == 1) {
       break;

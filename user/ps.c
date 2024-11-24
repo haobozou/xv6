@@ -24,12 +24,14 @@ int main(int argc, char *argv[]) {
     exit();
   }
 
-  printf(1, "PID\tPPID\tState\tName\n");
+  printf(1, "pid\tppid\tstate\tname\tct\trt\tdelay\ttickets\n");
   for (int i = 0; i < n; i++) {
     if (info[i].parent) {
-      printf(1, "%d\t%d\t%s\t%s\n", info[i].pid, info[i].parent->pid, info[i].st, info[i].name);
+      printf(1, "%d\t%d\t%s\t%s\t%d\t%d\t%d\t%d\n",
+             info[i].pid, info[i].parent->pid, info[i].st, info[i].name, info[i].ct, info[i].rt, info[i].delay, info[i].tickets);
     } else {
-      printf(1, "%d\t-\t%s\t%s\n", info[i].pid, info[i].st, info[i].name);
+      printf(1, "%d\t-\t%s\t%s\t%d\t%d\t%d\t%d\n",
+             info[i].pid, info[i].st, info[i].name, info[i].ct, info[i].rt, info[i].delay, info[i].tickets);
     }
   }
 
