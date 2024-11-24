@@ -619,16 +619,23 @@ int procinfo(int max, struct procinfo_t *info) {
   int ppid[max];
 
   acquire(&ptable.lock);
+
   int current = 0;
   for (p = ptable.proc; p < &ptable.proc[NPROC] && current < max; p++) {
-    if (p->state == UNUSED)
+    if (p->state == UNUSED) {
       continue;
+    }
     safestrcpy(info[current].st, states[p->state], sizeof(info[current].st));
     info[current].pid = p->pid;
     ppid[current] = p->parent->pid;
     safestrcpy(info[current].name, p->name, sizeof(info[current].name));
+    info[current].ct = p->sched.ct;
+    info[current].rt = p->sched.rt;
+    info[current].delay = p->sched.delay;
+    info[current].tickets = p->sched.tickets;
     current++;
   }
+
   for (int i = 0; i < current; i++) {
     for (int j = 0; j < current; j++) {
       if (ppid[i] == info[j].pid) {
@@ -637,6 +644,7 @@ int procinfo(int max, struct procinfo_t *info) {
       }
     }
   }
+
   release(&ptable.lock);
   return current;
 }
