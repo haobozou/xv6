@@ -627,7 +627,11 @@ int procinfo(int max, struct procinfo_t *info) {
     }
     safestrcpy(info[current].st, states[p->state], sizeof(info[current].st));
     info[current].pid = p->pid;
-    ppid[current] = p->parent->pid;
+    if (p->parent) {
+      ppid[current] = p->parent->pid;
+    } else {
+      ppid[current] = 0;
+    }
     safestrcpy(info[current].name, p->name, sizeof(info[current].name));
     info[current].ct = p->sched.ct;
     info[current].rt = p->sched.rt;
@@ -637,6 +641,10 @@ int procinfo(int max, struct procinfo_t *info) {
   }
 
   for (int i = 0; i < current; i++) {
+    if (ppid[i] == 0) {
+      info[i].parent = 0;
+      continue;
+    }
     for (int j = 0; j < current; j++) {
       if (ppid[i] == info[j].pid) {
         info[i].parent = &info[j];
