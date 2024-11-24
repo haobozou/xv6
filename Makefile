@@ -2,6 +2,8 @@ K=kernel
 U=user
 INC=include 
 
+MINADDR = 0x1000
+
 OBJS = \
 	$K/bio.o\
 	$K/console.o\
@@ -116,7 +118,7 @@ entryother: $K/entryother.S
 
 initcode: $U/initcode.S
 	$(CC) $(CFLAGS) -nostdinc -c $U/initcode.S -o $U/initcode.o 
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o $U/initcode.out $U/initcode.o
+	$(LD) $(LDFLAGS) -N -e start -Ttext $(MINADDR) -o $U/initcode.out $U/initcode.o
 	$(OBJCOPY) -S -O binary $U/initcode.out initcode
 	$(OBJDUMP) -S $U/initcode.o > $U/initcode.asm
 
@@ -131,14 +133,14 @@ $K/vectors.S: $K/vectors.pl
 ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o
 
 _%: %.o $(ULIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
+	$(LD) $(LDFLAGS) -N -e main -Ttext $(MINADDR) -o $@ $^
 	$(OBJDUMP) -S $@ > $*.asm
 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
 $U/_forktest: $U/forktest.o $(ULIB)
 	# forktest has less library code linked in - needs to be small
 	# in order to be able to max out the proc table.
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $U/_forktest $U/forktest.o $U/ulib.o $U/usys.o
+	$(LD) $(LDFLAGS) -N -e main -Ttext $(MINADDR) -o $U/_forktest $U/forktest.o $U/ulib.o $U/usys.o
 	$(OBJDUMP) -S $U/_forktest > $U/forktest.asm
 
 fs/mkfs: fs/mkfs.c include/fs.h 

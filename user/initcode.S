@@ -3,6 +3,7 @@
 
 #include "syscall.h"
 #include "traps.h"
+#include "mmu.h"
 
 
 # exec(init, argv)
@@ -10,7 +11,7 @@
 start:
   pushl $argv
   pushl $init
-  pushl $0  // where caller pc would be
+  pushl $MINADDR  // where caller pc would be
   movl $SYS_exec, %eax
   int $T_SYSCALL
 

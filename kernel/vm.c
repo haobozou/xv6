@@ -163,7 +163,7 @@ void switchuvm(struct proc *p) {
   popcli();
 }
 
-// Load the initcode into address 0 of pgdir.
+// Load the initcode into address MINADDR of pgdir.
 // sz must be less than a page.
 void inituvm(pde_t *pgdir, char *init, uint sz) {
   char *mem;
@@ -172,7 +172,7 @@ void inituvm(pde_t *pgdir, char *init, uint sz) {
     panic("inituvm: more than a page");
   mem = kalloc();
   memset(mem, 0, PGSIZE);
-  mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W | PTE_U);
+  mappages(pgdir, (void *)MINADDR, PGSIZE, V2P(mem), PTE_W | PTE_U);
   memmove(mem, init, sz);
 }
 
@@ -182,6 +182,8 @@ int loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz) {
   uint i, pa, n;
   pte_t *pte;
 
+  if ((uint)addr < MINADDR)
+    panic("loaduvm: addr must be higher than or equal to MINADDR");
   if ((uint)addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
   for (i = 0; i < sz; i += PGSIZE) {
@@ -204,6 +206,8 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
   char *mem;
   uint a;
 
+  if (oldsz < MINADDR || newsz < MINADDR)
+    return 0;
   if (newsz >= KERNBASE)
     return 0;
   if (newsz < oldsz)
@@ -236,6 +240,8 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
   pte_t *pte;
   uint a, pa;
 
+  if (oldsz < MINADDR || newsz < MINADDR)
+    return 0;
   if (newsz >= oldsz)
     return oldsz;
 
@@ -263,7 +269,7 @@ void freevm(pde_t *pgdir) {
 
   if (pgdir == 0)
     panic("freevm: no pgdir");
-  deallocuvm(pgdir, KERNBASE, 0);
+  deallocuvm(pgdir, KERNBASE, MINADDR);
   for (i = 0; i < NPDENTRIES; i++) {
     if (pgdir[i] & PTE_P) {
       char *v = P2V(PTE_ADDR(pgdir[i]));
@@ -294,7 +300,7 @@ pde_t *copyuvm(pde_t *pgdir, uint sz) {
 
   if ((d = setupkvm()) == 0)
     return 0;
-  for (i = 0; i < sz; i += PGSIZE) {
+  for (i = MINADDR; i < sz; i += PGSIZE) {
     if ((pte = walkpgdir(pgdir, (void *)i, 0)) == 0)
       panic("copyuvm: pte should exist");
     if (!(*pte & PTE_P))
