@@ -605,7 +605,7 @@ void procdump(void) {
   }
 }
 
-int procinfo(int max, struct procinfo_t *procinfo) {
+int procinfo(int max, struct procinfo_t *info) {
   static char *states[] = {
       [UNUSED] "U",
       [EMBRYO] "E",
@@ -623,16 +623,16 @@ int procinfo(int max, struct procinfo_t *procinfo) {
   for (p = ptable.proc; p < &ptable.proc[NPROC] && current < max; p++) {
     if (p->state == UNUSED)
       continue;
-    safestrcpy(procinfo[current].st, states[p->state], sizeof(procinfo[current].st));
-    procinfo[current].pid = p->pid;
+    safestrcpy(info[current].st, states[p->state], sizeof(info[current].st));
+    info[current].pid = p->pid;
     ppid[current] = p->parent->pid;
-    safestrcpy(procinfo[current].name, p->name, sizeof(procinfo[current].name));
+    safestrcpy(info[current].name, p->name, sizeof(info[current].name));
     current++;
   }
   for (int i = 0; i < current; i++) {
     for (int j = 0; j < current; j++) {
-      if (ppid[i] == procinfo[j].pid) {
-        procinfo[i].parent = &procinfo[j];
+      if (ppid[i] == info[j].pid) {
+        info[i].parent = &info[j];
         break;
       }
     }

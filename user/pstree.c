@@ -4,18 +4,16 @@
 #include "param.h"
 #include "procinfo.h"
 
-#define NULL ((void *)0)
-
-int *get_children(struct procinfo_t *ptable, int n, int ppid) {
+int *get_children(struct procinfo_t *info, int n, int ppid) {
   int *children;
-  if ((children = malloc(n * sizeof(int))) == NULL) {
+  if ((children = malloc(n * sizeof(int))) == 0) {
     printf(2, "Error: malloc failed\n");
-    return NULL;
+    return 0;
   }
 
   int current = 0;
   for (int i = 0; i < n; i++) {
-    if (ptable[i].parent && ptable[i].parent->pid == ppid) {
+    if (info[i].parent && info[i].parent->pid == ppid) {
       children[current] = i;
       current++;
     }
@@ -25,8 +23,8 @@ int *get_children(struct procinfo_t *ptable, int n, int ppid) {
   return children;
 }
 
-void pstree(struct procinfo_t *ptable, int n, int cur, int level, int *pipe) {
-  printf(1, "%d\t%s\t", ptable[cur].pid, ptable[cur].st);
+void pstree(struct procinfo_t *info, int n, int cur, int level, int *pipe) {
+  printf(1, "%d\t%s\t", info[cur].pid, info[cur].st);
 
   for (int i = 0; i < level - 1; i++) {
     if (pipe[i]) {
@@ -40,10 +38,10 @@ void pstree(struct procinfo_t *ptable, int n, int cur, int level, int *pipe) {
     printf(1, " \\_ ");
   }
 
-  printf(1, "%s\n", ptable[cur].name);
+  printf(1, "%s\n", info[cur].name);
 
   int *children;
-  if ((children = get_children(ptable, n, ptable[cur].pid)) == NULL) {
+  if ((children = get_children(info, n, info[cur].pid)) == 0) {
     exit();
   }
   for (int i = 0; children[i] != 0; i++) {
@@ -52,7 +50,7 @@ void pstree(struct procinfo_t *ptable, int n, int cur, int level, int *pipe) {
     } else {
       pipe[level] = 0;
     }
-    pstree(ptable, n, children[i], level + 1, pipe);
+    pstree(info, n, children[i], level + 1, pipe);
   }
   free(children);
 }
@@ -70,8 +68,8 @@ int main(int argc, char *argv[]) {
   }
 
   int n;
-  struct procinfo_t ptable[NPROC];
-  if ((n = procinfo(max, ptable)) < 0) {
+  struct procinfo_t info[NPROC];
+  if ((n = procinfo(max, info)) < 0) {
     printf(2, "Error: procinfo failed\n");
     exit();
   }
@@ -80,11 +78,11 @@ int main(int argc, char *argv[]) {
   int pipe[NPROC] = {0};
   printf(1, "PID\tState\tName\n");
   for (i = 0; i < n; i++) {
-    if (ptable[i].pid == 1) {
+    if (info[i].pid == 1) {
       break;
     }
   }
-  pstree(ptable, n, i, 0, pipe);
+  pstree(info, n, i, 0, pipe);
 
   exit();
 }

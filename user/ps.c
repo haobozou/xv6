@@ -18,18 +18,18 @@ int main(int argc, char *argv[]) {
   }
 
   int n;
-  struct procinfo_t ptable[NPROC];
-  if ((n = procinfo(max, ptable)) < 0) {
+  struct procinfo_t info[NPROC];
+  if ((n = procinfo(max, info)) < 0) {
     printf(2, "Error: procinfo failed\n");
     exit();
   }
 
   printf(1, "PID\tPPID\tState\tName\n");
   for (int i = 0; i < n; i++) {
-    if (ptable[i].parent) {
-      printf(1, "%d\t%d\t%s\t%s\n", ptable[i].pid, ptable[i].parent->pid, ptable[i].st, ptable[i].name);
+    if (info[i].parent) {
+      printf(1, "%d\t%d\t%s\t%s\n", info[i].pid, info[i].parent->pid, info[i].st, info[i].name);
     } else {
-      printf(1, "%d\t-\t%s\t%s\n", ptable[i].pid, ptable[i].st, ptable[i].name);
+      printf(1, "%d\t-\t%s\t%s\n", info[i].pid, info[i].st, info[i].name);
     }
   }
 
