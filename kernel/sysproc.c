@@ -7,6 +7,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "procinfo.h"
+#include "pageinfo.h"
 
 int sys_fork(void) {
   return fork();
@@ -96,4 +97,13 @@ int sys_procinfo(void) {
   if (argint(0, &max) < 0 || argptr(1, (void *)&p, max * sizeof(*p)) < 0)
     return -1;
   return procinfo(max, p);
+}
+
+int sys_pageinfo(void) {
+  int addr;
+  struct pageinfo_t *p;
+
+  if (argint(0, &addr) < 0 || argptr(1, (void *)&p, sizeof(*p)) < 0)
+    return -1;
+  return pageinfo((void *)addr, p);
 }

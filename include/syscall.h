@@ -23,3 +23,4 @@
 #define SYS_halt 22
 #define SYS_trace 23
 #define SYS_procinfo 24
+#define SYS_pageinfo 25

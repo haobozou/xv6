@@ -6,6 +6,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "pageinfo.h"
 
 extern char data[]; // defined by kernel.ld
 pde_t *kpgdir; // for use in scheduler()
@@ -355,6 +356,21 @@ int copyout(pde_t *pgdir, uint va, void *p, uint len) {
     len -= n;
     buf += n;
     va = va0 + PGSIZE;
+  }
+  return 0;
+}
+
+int pageinfo(void *va, struct pageinfo_t *info) {
+  pte_t *pte;
+
+  pte = walkpgdir(myproc()->pgdir, va, 0);
+  if (!pte || !(*pte & PTE_P)) {
+    info->mapped = 0;
+  } else {
+    info->mapped = 1;
+    info->flags = *pte & (PGSIZE - 1);
+    info->va = (uint)va;
+    info->pa = (*pte & ~(PGSIZE - 1)) | ((uint)va & (PGSIZE - 1));
   }
   return 0;
 }

@@ -96,6 +96,7 @@ extern int sys_uptime(void);
 extern int sys_halt(void);
 extern int sys_trace(void);
 extern int sys_procinfo(void);
+extern int sys_pageinfo(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
@@ -122,6 +123,7 @@ static int (*syscalls[])(void) = {
     [SYS_halt] sys_halt,
     [SYS_trace] sys_trace,
     [SYS_procinfo] sys_procinfo,
+    [SYS_pageinfo] sys_pageinfo,
 };
 
 static char *syscall_names[] = {
@@ -149,6 +151,7 @@ static char *syscall_names[] = {
     [SYS_halt] "halt",
     [SYS_trace] "trace",
     [SYS_procinfo] "procinfo",
+    [SYS_pageinfo] "pageinfo",
 };
 
 void syscall(void) {

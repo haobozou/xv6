@@ -1,6 +1,7 @@
 struct stat;
 struct rtcdate;
 struct procinfo_t;
+struct pageinfo_t;
 
 // system calls
 int fork(void);
@@ -27,6 +28,7 @@ int uptime(void);
 int halt(void);
 int trace(int);
 int procinfo(int, struct procinfo_t *);
+int pageinfo(void *, struct pageinfo_t *);
 
 // ulib.c
 int stat(const char *, struct stat *);
