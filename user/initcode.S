@@ -3,7 +3,7 @@
 
 #include "syscall.h"
 #include "traps.h"
-#include "mmu.h"
+#include "memlayout.h"
 
 
 # exec(init, argv)
