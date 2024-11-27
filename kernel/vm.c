@@ -169,7 +169,7 @@ void switchuvm(struct proc *p) {
 void inituvm(pde_t *pgdir, char *init, uint sz) {
   char *mem;
 
-  if (sz >= PGSIZE)
+  if (sz > PGSIZE)
     panic("inituvm: more than a page");
   mem = kalloc();
   memset(mem, 0, PGSIZE);
