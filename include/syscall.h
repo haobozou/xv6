@@ -24,3 +24,5 @@
 #define SYS_trace 23
 #define SYS_procinfo 24
 #define SYS_pageinfo 25
+#define SYS_mmap 26
+#define SYS_munmap 27

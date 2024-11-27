@@ -29,6 +29,8 @@ int halt(void);
 int trace(int);
 int procinfo(int, struct procinfo_t *);
 int pageinfo(void *, struct pageinfo_t *);
+void *mmap(void *, int, int);
+int munmap(void *, int);
 
 // ulib.c
 int stat(const char *, struct stat *);

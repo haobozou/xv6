@@ -107,3 +107,28 @@ int sys_pageinfo(void) {
     return -1;
   return pageinfo((void *)addr, p);
 }
+
+int sys_mmap(void) {
+  int hint;
+  int len;
+  int prot;
+
+  if (argint(0, &hint) < 0)
+    return -1;
+  if (argint(1, &len) < 0)
+    return -1;
+  if (argint(2, &prot) < 0)
+    return -1;
+  return (int)mmap((void *)hint, len, prot);
+}
+
+int sys_munmap(void) {
+  int addr;
+  int len;
+
+  if (argint(0, &addr) < 0)
+    return -1;
+  if (argint(1, &len) < 0)
+    return -1;
+  return munmap((void *)addr, len);
+}

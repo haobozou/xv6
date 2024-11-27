@@ -204,14 +204,18 @@ int loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz) {
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 int allocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
+  return allocuvm_w_perm(pgdir, oldsz, newsz, PTE_U | PTE_W);
+}
+
+int allocuvm_w_perm(pde_t *pgdir, uint oldsz, uint newsz, int perm) {
   char *mem;
   uint a;
 
   if (oldsz < MINADDR || newsz < MINADDR)
     return 0;
-  if (newsz >= KERNBASE)
+  if (oldsz > KERNBASE || newsz > KERNBASE)
     return 0;
-  if (newsz < oldsz)
+  if (newsz <= oldsz)
     return oldsz;
 
   a = PGROUNDUP(oldsz);
@@ -223,7 +227,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
       return 0;
     }
     memset(mem, 0, PGSIZE);
-    if (mappages(pgdir, (char *)a, PGSIZE, V2P(mem), PTE_W | PTE_U) < 0) {
+    if (mappages(pgdir, (char *)a, PGSIZE, V2P(mem), perm) < 0) {
       cprintf("allocuvm out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
       kfree(mem);
@@ -242,6 +246,8 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
   uint a, pa;
 
   if (oldsz < MINADDR || newsz < MINADDR)
+    return 0;
+  if (oldsz > KERNBASE || newsz > KERNBASE)
     return 0;
   if (newsz >= oldsz)
     return oldsz;
@@ -371,6 +377,105 @@ int pageinfo(void *va, struct pageinfo_t *info) {
     info->flags = *pte & (PGSIZE - 1);
     info->va = (uint)va;
     info->pa = (*pte & ~(PGSIZE - 1)) | ((uint)va & (PGSIZE - 1));
+  }
+  return 0;
+}
+
+int is_unmapped(pde_t *pgdir, uint addr, int len) {
+  pte_t *pte;
+
+  for (uint i = addr; i < addr + len; i += PGSIZE) {
+    pte = walkpgdir(pgdir, (void *)i, 0);
+    if (pte && (*pte & PTE_P)) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+void *mmap(void *hint, int len, int prot) {
+  uint oldsz, newsz;
+
+  if (!hint) {
+    hint = (void *)MINADDR;
+  }
+  oldsz = PGROUNDUP((uint)hint);
+  if (oldsz < MINADDR) {
+    oldsz = MINADDR;
+  }
+
+  if (len <= 0) {
+    return (void *)-1;
+  }
+  len = PGROUNDUP(len);
+
+  int flags;
+  if (prot != 0 && prot != 1) {
+    return (void *)-1;
+  }
+  if (prot) {
+    flags = PTE_U | PTE_W;
+  } else {
+    flags = PTE_U;
+  }
+
+  int found = 0;
+  for (; oldsz + len <= KERNBASE; oldsz += PGSIZE) {
+    if (is_unmapped(myproc()->pgdir, oldsz, len)) {
+      found = 1;
+      break;
+    }
+  }
+
+  if (!found) {
+    for (oldsz = MINADDR; oldsz < (uint)hint && oldsz + len <= KERNBASE; oldsz += PGSIZE) {
+      if (is_unmapped(myproc()->pgdir, oldsz, len)) {
+        found = 1;
+        break;
+      }
+    }
+  }
+
+  if (!found) {
+    return (void *)-1;
+  }
+
+  newsz = oldsz + len;
+  if (allocuvm_w_perm(myproc()->pgdir, oldsz, newsz, flags) == 0) {
+    return (void *)-1;
+  }
+  return (void *)oldsz;
+}
+
+int munmap(void *addr, int len) {
+  uint newsz, oldsz;
+
+  newsz = (uint)addr;
+  if (newsz > KERNBASE) {
+    return -1;
+  }
+  if (newsz % PGSIZE != 0) {
+    return -1;
+  }
+
+  if (len <= 0) {
+    return -1;
+  }
+  len = PGROUNDUP(len);
+
+  oldsz = newsz + len;
+  if (oldsz > KERNBASE) {
+    return -1;
+  }
+
+  if (newsz < MINADDR) {
+    newsz = MINADDR;
+  }
+  if (oldsz < MINADDR) {
+    oldsz = MINADDR;
+  }
+  if (deallocuvm(myproc()->pgdir, oldsz, newsz) == 0) {
+    return -1;
   }
   return 0;
 }
