@@ -30,6 +30,20 @@ int cpuid() {
   return mycpu() - cpus;
 }
 
+int is_only_thread(struct proc *thrd) {
+  struct proc *p;
+
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (p->state == UNUSED) {
+      continue;
+    }
+    if (p->pid != thrd->pid && p->pgdir == thrd->pgdir) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
 // Must be called with interrupts disabled to avoid the caller being
 // rescheduled between reading lapicid and running through the loop.
 struct cpu *mycpu(void) {
@@ -711,4 +725,50 @@ int clone(void (*fn)(void *), void *stack, void *arg) {
   release(&ptable.lock);
 
   return pid;
+}
+
+int join(void **stack) {
+  struct proc *p;
+  int havekids, pid;
+  struct proc *curthrd = myproc();
+
+  acquire(&ptable.lock);
+
+  for (;;) {
+    havekids = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if (p->state == UNUSED) {
+        continue;
+      }
+      if (p->parent != curthrd || p->pgdir != curthrd->pgdir) {
+        continue;
+      }
+      havekids = 1;
+      if (p->state == ZOMBIE) {
+        *stack = p->stack;
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        if (is_only_thread(p)) {
+          freevm(p->pgdir);
+        }
+        p->pgdir = 0;
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    if (!havekids || curthrd->killed) {
+      release(&ptable.lock);
+      return -1;
+    }
+
+    sleep(curthrd, &ptable.lock);
+  }
 }

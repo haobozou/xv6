@@ -27,3 +27,4 @@
 #define SYS_mmap 26
 #define SYS_munmap 27
 #define SYS_clone 28
+#define SYS_join 29

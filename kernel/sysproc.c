@@ -146,3 +146,11 @@ int sys_clone(void) {
     return -1;
   return clone((void *)fn, (void *)stack, (void *)arg);
 }
+
+int sys_join(void) {
+  int stack;
+
+  if (argint(0, &stack) < 0)
+    return -1;
+  return join((void **)stack);
+}

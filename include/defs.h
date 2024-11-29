@@ -124,6 +124,7 @@ void wakeup(void *);
 void yield(void);
 int procinfo(int, struct procinfo_t *);
 int clone(void (*)(void *), void *, void *);
+int join(void **);
 
 // swtch.S
 void swtch(struct context **, struct context *);
