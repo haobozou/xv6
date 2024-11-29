@@ -132,3 +132,17 @@ int sys_munmap(void) {
     return -1;
   return munmap((void *)addr, len);
 }
+
+int sys_clone(void) {
+  int fn;
+  int stack;
+  int arg;
+
+  if (argint(0, &fn) < 0)
+    return -1;
+  if (argint(1, &stack) < 0)
+    return -1;
+  if (argint(2, &arg) < 0)
+    return -1;
+  return clone((void *)fn, (void *)stack, (void *)arg);
+}

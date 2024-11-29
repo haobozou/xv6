@@ -123,6 +123,7 @@ int wait(void);
 void wakeup(void *);
 void yield(void);
 int procinfo(int, struct procinfo_t *);
+int clone(void (*)(void *), void *, void *);
 
 // swtch.S
 void swtch(struct context **, struct context *);

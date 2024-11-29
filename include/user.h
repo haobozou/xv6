@@ -31,6 +31,7 @@ int procinfo(int, struct procinfo_t *);
 int pageinfo(void *, struct pageinfo_t *);
 void *mmap(void *, int, int);
 int munmap(void *, int);
+int clone(void (*)(void *), void *, void *);
 
 // ulib.c
 int stat(const char *, struct stat *);

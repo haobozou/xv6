@@ -656,3 +656,59 @@ int procinfo(int max, struct procinfo_t *info) {
   release(&ptable.lock);
   return current;
 }
+
+int clone(void (*fn)(void *), void *stack, void *arg) {
+  int i, pid;
+  struct proc *nt;
+  struct proc *curthrd = myproc();
+  uint sp;
+
+  if ((uint)stack % PGSIZE != 0) {
+    return -1;
+  }
+
+  if ((nt = allocproc()) == 0) {
+    return -1;
+  }
+
+  nt->pgdir = curthrd->pgdir;
+  nt->stack = stack;
+  nt->sz = curthrd->sz;
+  nt->parent = curthrd;
+  *nt->tf = *curthrd->tf;
+
+  nt->tf->eax = 0;
+
+  sp = (uint)stack + PGSIZE;
+  sp -= 4;
+  *(uint *)sp = (uint)arg;
+  sp -= 4;
+  *(uint *)sp = 0xffffffff;
+  nt->tf->esp = sp;
+
+  nt->tf->eip = (uint)fn;
+
+  for (i = 0; i < NOFILE; i++)
+    if (curthrd->ofile[i])
+      nt->ofile[i] = filedup(curthrd->ofile[i]);
+  nt->cwd = idup(curthrd->cwd);
+
+  safestrcpy(nt->name, curthrd->name, sizeof(curthrd->name));
+
+  pid = nt->pid;
+
+  nt->tmask = curthrd->tmask;
+
+  acquire(&ptable.lock);
+
+  nt->state = RUNNABLE;
+
+  nt->sched.ct = ticks;
+  nt->sched.rt = 0;
+  nt->sched.delay = -1;
+  nt->sched.tickets = MAXTICKETS;
+
+  release(&ptable.lock);
+
+  return pid;
+}

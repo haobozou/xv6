@@ -63,6 +63,7 @@ struct proc {
   char name[16]; // Process name (debugging)
   int tmask;
   struct sched_t sched;
+  void *stack;
 };
 
 // Process memory is laid out contiguously, low addresses first:

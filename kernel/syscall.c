@@ -99,6 +99,7 @@ extern int sys_procinfo(void);
 extern int sys_pageinfo(void);
 extern int sys_mmap(void);
 extern int sys_munmap(void);
+extern int sys_clone(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
@@ -128,6 +129,7 @@ static int (*syscalls[])(void) = {
     [SYS_pageinfo] sys_pageinfo,
     [SYS_mmap] sys_mmap,
     [SYS_munmap] sys_munmap,
+    [SYS_clone] sys_clone,
 };
 
 static char *syscall_names[] = {
@@ -158,6 +160,7 @@ static char *syscall_names[] = {
     [SYS_pageinfo] "pageinfo",
     [SYS_mmap] "mmap",
     [SYS_munmap] "munmap",
+    [SYS_clone] "clone",
 };
 
 void syscall(void) {
