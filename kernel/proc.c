@@ -287,24 +287,33 @@ int wait(void) {
   struct proc *curproc = myproc();
 
   acquire(&ptable.lock);
+
   for (;;) {
     // Scan through table looking for exited children.
     havekids = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if (p->parent != curproc)
+      if (p->state == UNUSED) {
         continue;
+      }
+      if (p->parent != curproc || p->pgdir == curproc->pgdir) {
+        continue;
+      }
       havekids = 1;
       if (p->state == ZOMBIE) {
         // Found one.
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        if (is_only_thread(p)) {
+          freevm(p->pgdir);
+        }
+        p->pgdir = 0;
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+
         release(&ptable.lock);
         return pid;
       }
