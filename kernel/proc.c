@@ -235,12 +235,36 @@ int fork(void) {
   return pid;
 }
 
+void fixup(struct proc *thrd) {
+  struct proc *p;
+
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (p->state == UNUSED) {
+      continue;
+    }
+    if (p->parent != thrd) {
+      continue;
+    }
+    if (p->pgdir != thrd->pgdir) {
+      p->parent = initproc;
+      if (p->state == ZOMBIE) {
+        wakeup1(initproc);
+      }
+    } else {
+      fixup(p);
+      p->killed = 1;
+      if (p->state == SLEEPING) {
+        p->state = RUNNABLE;
+      }
+    }
+  }
+}
+
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
 void exit(void) {
   struct proc *curproc = myproc();
-  struct proc *p;
   int fd;
 
   if (curproc == initproc)
@@ -264,14 +288,8 @@ void exit(void) {
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
 
-  // Pass abandoned children to init.
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-    if (p->parent == curproc) {
-      p->parent = initproc;
-      if (p->state == ZOMBIE)
-        wakeup1(initproc);
-    }
-  }
+  // Reparent child processes and kill child threads.
+  fixup(curproc);
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
