@@ -130,7 +130,7 @@ $K/kernel: $(OBJS) $K/entry.o entryother initcode $K/kernel.ld
 $K/vectors.S: $K/vectors.pl
 	./$K/vectors.pl > $K/vectors.S
 
-ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o
+ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o $U/thread.o
 
 _%: %.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext $(MINADDR) -o $@ $^
