@@ -3,6 +3,10 @@ struct rtcdate;
 struct procinfo_t;
 struct pageinfo_t;
 
+struct lock_t {
+  uint locked;
+};
+
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));
@@ -49,3 +53,6 @@ void free(void *);
 int atoi(const char *);
 int thread_create(void (*)(void *), void *);
 int thread_join();
+void lock_init(struct lock_t *);
+void lock_acquire(struct lock_t *);
+void lock_release(struct lock_t *);
