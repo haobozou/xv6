@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 #include "param.h"
+#include "x86.h"
 
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
@@ -21,8 +22,19 @@ typedef union header Header;
 static Header base;
 static Header *freep;
 
+static uint is_free_lock_initialised;
+static struct lock_t free_lock;
+
+static uint is_malloc_lock_initialised;
+static struct lock_t malloc_lock;
+
 void free(void *ap) {
   Header *bp, *p;
+
+  if (xchg(&is_free_lock_initialised, 1) == 0) {
+    lock_init(&free_lock);
+  }
+  lock_acquire(&free_lock);
 
   bp = (Header *)ap - 1;
   for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
@@ -39,6 +51,8 @@ void free(void *ap) {
   } else
     p->s.ptr = bp;
   freep = p;
+
+  lock_release(&free_lock);
 }
 
 static Header *morecore(uint nu) {
@@ -59,6 +73,12 @@ static Header *morecore(uint nu) {
 void *malloc(uint nbytes) {
   Header *p, *prevp;
   uint nunits;
+  void *ret = (void *)0;
+
+  if (xchg(&is_malloc_lock_initialised, 1) == 0) {
+    lock_init(&malloc_lock);
+  }
+  lock_acquire(&malloc_lock);
 
   nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
   if ((prevp = freep) == 0) {
@@ -75,10 +95,14 @@ void *malloc(uint nbytes) {
         p->s.size = nunits;
       }
       freep = prevp;
-      return (void *)(p + 1);
+      ret = (void *)(p + 1);
+      break;
     }
     if (p == freep)
       if ((p = morecore(nunits)) == 0)
-        return 0;
+        break;
   }
+
+  lock_release(&malloc_lock);
+  return ret;
 }
