@@ -15,6 +15,8 @@ struct {
 
 static struct proc *initproc;
 
+struct spinlock growproc_lock;
+
 int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
@@ -23,6 +25,7 @@ static void wakeup1(void *chan);
 
 void pinit(void) {
   initlock(&ptable.lock, "ptable");
+  initlock(&growproc_lock, "growproc");
 }
 
 // Must be called with interrupts disabled
@@ -169,16 +172,41 @@ void userinit(void) {
 int growproc(int n) {
   uint sz;
   struct proc *curproc = myproc();
+  struct proc *p;
+
+  acquire(&growproc_lock);
 
   sz = curproc->sz;
   if (n > 0) {
-    if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0) {
+      release(&growproc_lock);
       return -1;
+    }
   } else if (n < 0) {
-    if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if (!is_only_thread(curproc)) {
+      release(&growproc_lock);
       return -1;
+    }
+    if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0) {
+      release(&growproc_lock);
+      return -1;
+    }
   }
-  curproc->sz = sz;
+
+  acquire(&ptable.lock);
+
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (p->state == UNUSED) {
+      continue;
+    }
+    if (p->pgdir == curproc->pgdir) {
+      p->sz = sz;
+    }
+  }
+
+  release(&ptable.lock);
+  release(&growproc_lock);
+
   switchuvm(curproc);
   return 0;
 }
